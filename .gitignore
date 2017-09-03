@@ -58,5 +58,5 @@ typings/
 .env
 
 # alexa skill archive
-Archive.zip
+*.zip
 

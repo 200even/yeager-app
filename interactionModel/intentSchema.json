@@ -1,0 +1,28 @@
+{
+  "intents": [
+    {
+      "slots": [
+        {
+          "name": "email",
+          "type": "EMAIL"
+        }
+      ],
+      "intent": "getVerifyIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "domain",
+          "type": "DOMAIN_NAME"
+        }
+      ],
+      "intent": "getEmailsIntent"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    }
+  ]
+}

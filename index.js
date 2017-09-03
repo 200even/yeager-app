@@ -1,8 +1,7 @@
 const Alexa = require('alexa-sdk');
-const getFromAPI = require('./api-fetch');
+const helpers = require('./helpers');
 
 const hunterAPIKey = process.env.hunterAPIKey;
-let domain = 'spacex.com';
 const skillMessages = {
   welcomeMessage: 'Yeager email finder. You can ask what emails are associated with any domain or ask me to verify an email',
   welcomeReprompt: 'You can ask what emails are associated with any domain or ask me to verify an email',
@@ -11,7 +10,6 @@ const skillMessages = {
   tryAgain: 'Try saying the domain name again or try another domain. For example tesla.com',
   goodbyeMessage: 'OK. Happy email hunting from Yeager!',
   skillOverview: 'Yeager allows you to identify the people associated with a website and verify their email addresses.',
-  emailResultIntro: `These are the emails I've found associated with ${domain}`,
 };
 const maxResults = process.env.MAX_RESULTS;
 const states = {
@@ -22,53 +20,53 @@ const states = {
 let output = '';
 
 const newSessionHandlers = {
-  LaunchRequest() {
+  LaunchRequest: function () {
     this.handler.state = states.SEARCHMODE;
     output = skillMessages.welcomeMessage;
     this.emit(':ask', output, skillMessages.welcomeReprompt);
   },
-  getOverview() {
+  getOverview: function () {
     this.handler.state = states.SEARCHMODE;
     this.emitWithState('getOverview');
   },
-  getEmailsIntent() {
+  getEmailsIntent: function () {
     this.handler.state = states.SEARCHMODE;
     this.emitWithState('getEmailsIntent');
   },
-  getVerifyIntent() {
+  getVerifyIntent: function () {
     this.handler.state = states.SEARCHMODE;
     this.emitWithState('getVerifyIntent');
   },
-  'AMAZON.StopIntent': () => {
+  'AMAZON.StopIntent': function () {
     this.emit(':tell', skillMessages.goodbyeMessage);
   },
-  'AMAZON.CancelIntent': () => {
+  'AMAZON.CancelIntent': function () {
     // Use this function to clear up and save any data needed between sessions
     this.emit(':tell', skillMessages.goodbyeMessage);
   },
-  SessionEndedRequest() {
+  SessionEndedRequest: function () {
     // Use this function to clear up and save any data needed between sessions
     this.emit('AMAZON.StopIntent');
   },
-  Unhandled() {
+  Unhandled: function () {
     output = skillMessages.helpMessage;
     this.emit(':ask', output, skillMessages.welcomeReprompt);
   },
 };
 
 const startSearchHandlers = Alexa.CreateStateHandler(states.SEARCHMODE, {
-  getOverview() {
+  'getOverview': function () {
     this.emit(':tellWithCard', skillMessages.skillOverview);
   },
-  getEmailsIntent(request) {
-    console.log(request);
-    domain = 'spacex.com';
+  'getEmailsIntent': function () {
+    const domain = helpers.extractRootDomain(this.event.request.intent.slots.domain.value);
 
     if (domain) {
       const url = `https://api.hunter.io/v2/domain-search?domain=${domain}&api_key=${hunterAPIKey}`;
-      getFromAPI.httpGet(url, (response) => {
+      helpers.httpsGet(url, (response) => {
+        console.log(`Response: ${JSON.stringify(response)}`);
         // Parse the response into a JSON object ready to be formatted.
-        console.log(JSON.stringify(response));
+        response = JSON.parse(response);
         const emails = response.data.emails;
         let cardContent = 'Data provided by Hunter\n\n';
 
@@ -76,7 +74,7 @@ const startSearchHandlers = Alexa.CreateStateHandler(states.SEARCHMODE, {
         if (response == null) {
           output = 'There was a problem with getting data please try again';
         } else {
-          output = skillMessages.emailResultIntro;
+          output = `These are the emails I've found associated with ${domain}`;
 
           // If we have data.
           for (let i = 0; i < emails.length; i += 1) {
@@ -87,15 +85,22 @@ const startSearchHandlers = Alexa.CreateStateHandler(states.SEARCHMODE, {
               const position = emails[i].position;
               const twitter = emails[i].twitter;
 
-              output += `Result ${i + 1}: ${value}`;
-              // TODO: implement the rest of the fields
+              output += `<break time='1s'/>Result ${i + 1} is<break time='1s'/>`;
+              if (firstName || lastName) output += `Name <break time='1s'/> ${firstName} ${lastName}`;
+              output += `<break time='1s'/> Email <break time='1s'/> ${value}`;
+              if (position) output += `<break time='1s'/>Position <break time='1s'/> ${position}`;
+              if (twitter) output += `<break time='1s'/>Twitter handle <break time='1s'/> ${twitter}`;
 
               cardContent += `Result ${i + 1}\n`;
-              cardContent += `${value}\n\n`;
+              if (firstName) cardContent += firstName;
+              cardContent += lastName ? ` ${lastName}\n` : '\n';
+              cardContent += ` ${value}\n`;
+              if (position) cardContent += `${position}\n`;
+              if (twitter) cardContent += `${twitter}\n`;
+              cardContent += '\n';
             }
           }
-
-          output += ' See your Alexa app for more information.';
+          output += '<break time=\'2s\'/> See your Alexa app for more information.';
         }
 
         const cardTitle = `Email Results for ${domain}`;
@@ -105,14 +110,15 @@ const startSearchHandlers = Alexa.CreateStateHandler(states.SEARCHMODE, {
       this.emit(':tell', skillMessages.noResultsError, skillMessages.tryAgain);
     }
   },
-  getVerifyIntent(request) {
-    const email = 'fergusonic85@gmail.com';
-    console.log(request);
+  'getVerifyIntent': function () {
+    const email = helpers.extractEmail(this.event.request.intent.slots.email.value);
+    console.log(`Email: ${email}`);
 
     if (email) {
       const url = `https://api.hunter.io/v2/email-verifier?email=${email}&api_key=${hunterAPIKey}`;
-      getFromAPI.httpGet(url, (response) => {
+      helpers.httpsGet(url, (response) => {
         // Parse the response into a JSON object ready to be formatted.
+        response = JSON.parse(response);
         console.log(JSON.stringify(response));
         const smtpServer = response.data.smtp_server;
         const smtpCheck = response.data.smtp_check;
@@ -121,11 +127,11 @@ const startSearchHandlers = Alexa.CreateStateHandler(states.SEARCHMODE, {
         if (response == null) {
           output = 'There was a problem with getting data please try again';
         } else {
-          output = 'OK. Here\'s what I\'ve found.';
+          output = 'OK. Here\'s what I\'ve found.\'<break time=\'1s\'/>';
           if (smtpServer) {
-            output += smtpCheck ? `The mail server accepted ${email}` : `The mail server rejected ${email}.`;
+            output += smtpCheck ? `${email} seems to be valid.` : `The mail server rejected ${email}.`;
           } else {
-            output += `The server (the part after the @) for ${email} doesn't seem to be valid`;
+            output += `The server for ${email} doesn't seem to be valid`;
           }
         }
         this.emit(':tell', output);
@@ -134,22 +140,22 @@ const startSearchHandlers = Alexa.CreateStateHandler(states.SEARCHMODE, {
       this.emit(':ask', skillMessages.noResultsError, skillMessages.tryAgain);
     }
   },
-  'AMAZON.YesIntent': () => {
+  'AMAZON.YesIntent': function () {
     this.emit(':ask', skillMessages.helpMessage);
   },
-  'AMAZON.NoIntent': () => {
+  'AMAZON.NoIntent': function () {
     this.emit(':ask', skillMessages.helpMessage);
   },
-  'AMAZON.StopIntent': () => {
+  'AMAZON.StopIntent': function () {
     this.emit(':tell', skillMessages.goodbyeMessage);
   },
-  'AMAZON.HelpIntent': () => {
+  'AMAZON.HelpIntent': function () {
     this.emit(':ask', skillMessages.helpMessage);
   },
-  'AMAZON.RepeatIntent': () => {
+  'AMAZON.RepeatIntent': function () {
     this.emit(':ask', skillMessages.helpMessage);
   },
-  'AMAZON.CancelIntent': () => {
+  'AMAZON.CancelIntent': function () {
     // Use this function to clear up and save any data needed between sessions
     this.emit(':tell', skillMessages.goodbyeMessage);
   },

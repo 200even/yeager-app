@@ -1,0 +1,10 @@
+getEmailsIntent what emails are associated with {domain}
+getEmailsIntent what email addresses are associated with {domain}
+getEmailsIntent what contacts do you have for {domain}
+getEmailsIntent tell me the emails for {domain}
+getEmailsIntent tell me the contacts for {domain}
+getEmailsIntent return email addresses for {domain}
+getEmailsIntent return emails for {domain}
+getEmailsIntent return contacts for {domain}
+getVerifyIntent check {email}
+getVerifyIntent verify {email}
