@@ -1,5 +1,13 @@
 const helpers = require('./helpers');
 const assert = require('assert');
+const conversation = require('alexa-conversation');
+const app = require('./index.js');
+
+const opts = { // config will be used to generate the requests to skill 
+  name: 'Test Conversation',
+  appId: process.env.YEAGER_APP_ID,
+  app: app,
+};
 
 describe('Unit Tests', () => {
   let input = '';
@@ -60,3 +68,13 @@ describe('Unit Tests', () => {
     });
   });
 });
+
+let email = 'elon.musk@spacex.com';
+conversation(opts)
+.userSays('LaunchRequest')
+  .ssmlResponse
+    .shouldEqual(`<speak> ${app.skillMessages.welcomeMessage} </speak>`, `<speak> ${app.skillMessages.welcomeReprompt} </speak>`)
+.userSays('getVerifyIntent', {email: email})
+  .ssmlResponse
+    .shouldEqual(`<speak> The mail server rejected ${email}. </speak>`)
+.end();

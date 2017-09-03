@@ -1,5 +1,6 @@
 const Alexa = require('alexa-sdk');
 const helpers = require('./helpers');
+const emailExistence = require('email-existence');
 
 const hunterAPIKey = process.env.hunterAPIKey;
 const skillMessages = {
@@ -22,8 +23,7 @@ let output = '';
 const newSessionHandlers = {
   LaunchRequest: function () {
     this.handler.state = states.SEARCHMODE;
-    output = skillMessages.welcomeMessage;
-    this.emit(':ask', output, skillMessages.welcomeReprompt);
+    this.emit(':ask', skillMessages.welcomeMessage, skillMessages.welcomeReprompt);
   },
   getOverview: function () {
     this.handler.state = states.SEARCHMODE;
@@ -113,29 +113,10 @@ const startSearchHandlers = Alexa.CreateStateHandler(states.SEARCHMODE, {
   'getVerifyIntent': function () {
     const email = helpers.extractEmail(this.event.request.intent.slots.email.value);
     console.log(`Email: ${email}`);
-
     if (email) {
-      const url = `https://api.hunter.io/v2/email-verifier?email=${email}&api_key=${hunterAPIKey}`;
-      helpers.httpsGet(url, (response) => {
-        // Parse the response into a JSON object ready to be formatted.
-        response = JSON.parse(response);
-        console.log(JSON.stringify(response));
-        const smtpServer = response.data.smtp_server;
-        const smtpCheck = response.data.smtp_check;
-
-        // Check if there are data, If not create an error speech out to try again.
-        if (response == null) {
-          output = 'There was a problem with getting data please try again';
-        } else {
-          output = 'OK. Here\'s what I\'ve found.\'<break time=\'1s\'/>';
-          if (smtpServer) {
-            output += smtpCheck ? `${email} seems to be valid.` : `The mail server rejected ${email}.`;
-          } else {
-            output += `The server for ${email} doesn't seem to be valid`;
-          }
-        }
-        this.emit(':tell', output);
-      });
+      const isValid = emailExistence.check(email);
+      output = isValid ? `${email} seems to be valid.` : `The mail server rejected ${email}.`;
+      this.emit(':tell', output);
     } else {
       this.emit(':ask', skillMessages.noResultsError, skillMessages.tryAgain);
     }
@@ -174,3 +155,5 @@ exports.handler = (event, context) => {
   alexa.registerHandlers(newSessionHandlers, startSearchHandlers);
   alexa.execute();
 };
+
+exports.skillMessages = skillMessages;
