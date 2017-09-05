@@ -24,8 +24,8 @@ module.exports = {
   },
   extractRootDomain: (input) => {
     // get only the url portion of the input
-    let url = input;
-    const urlArr = input.split(' ');
+    let url = input.replace(/ dot /gi, ".").replace(/ dash /gi, "-");
+    const urlArr = url.split(' ');
     if (urlArr.length > 1) {
       for (let i = 0; i < urlArr.length; i += 1) {
         if (urlArr[i].indexOf('.') > -1) {
@@ -40,8 +40,8 @@ module.exports = {
     return domain;
   },
   extractEmail: (input) => {
-    let email = input;
-    const emailArr = input.split(' ');
+    let email = input.replace(" at ", "@").replace(/ dot /gi, ".").replace(/ dash /gi, "-");
+    const emailArr = email.split(' ');
     if (emailArr.length > 1) {
       for (let i = 0; i < emailArr.length; i += 1) {
         if (emailArr[i].indexOf('@') > -1) {

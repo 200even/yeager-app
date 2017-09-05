@@ -38,7 +38,7 @@ const newSessionHandlers = {
     this.emitWithState('getVerifyIntent');
   },
   'AMAZON.StopIntent': function () {
-    this.emit(':tell', skillMessages.goodbyeMessage);
+    this.emit(':tell', 'Goodbye');
   },
   'AMAZON.CancelIntent': function () {
     // Use this function to clear up and save any data needed between sessions

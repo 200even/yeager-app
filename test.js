@@ -44,10 +44,15 @@ describe('Unit Tests', function () {
       domain = helpers.extractRootDomain(input);
       assert.equal('india-tourism.com', domain);
     });
-    it('should return india-tourism.com from alliedenvelopes.co.uk', function () {
+    it('should return alliedenvelopes.co.uk from alliedenvelopes.co.uk', function () {
       input = 'alliedenvelopes.co.uk';
       domain = helpers.extractRootDomain(input);
       assert.equal('alliedenvelopes.co.uk', domain);
+    });
+    it('should return india-tourism.com from \'india dash tourism dot com\'', function () {
+      input = 'india dash tourism dot com';
+      domain = helpers.extractRootDomain(input);
+      assert.equal('india-tourism.com', domain);
     });
   });
   describe('Extract email', function () {
@@ -66,6 +71,16 @@ describe('Unit Tests', function () {
       input = 'foo elon.musk@spacex.co.uk bar';
       email = helpers.extractEmail(input);
       assert.equal('elon.musk@spacex.co.uk', email);
+    });
+    it('should return elon.musk@spacex.co.uk from \'foo elon dot musk at spacex dot co dot uk bar\'', function () {
+      input = 'foo elon dot musk at spacex dot co dot uk bar';
+      email = helpers.extractEmail(input);
+      assert.equal('elon.musk@spacex.co.uk', email);
+    });
+    it('should return elon-musk@spacex.co.uk from \'foo elon dash musk at spacex dot co dot uk bar\'', function () {
+      input = 'foo elon dash musk at spacex dot co dot uk bar';
+      email = helpers.extractEmail(input);
+      assert.equal('elon-musk@spacex.co.uk', email);
     });
   });
 });
