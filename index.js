@@ -114,9 +114,10 @@ const startSearchHandlers = Alexa.CreateStateHandler(states.SEARCHMODE, {
     const email = helpers.extractEmail(this.event.request.intent.slots.email.value);
     console.log(`Email: ${email}`);
     if (email) {
-      const isValid = emailExistence.check(email);
-      output = isValid ? `${email} seems to be valid.` : `The mail server rejected ${email}.`;
-      this.emit(':tell', output);
+      emailExistence.check(email, (err, res) => {
+        output = res ? `${email} seems to be valid.` : `The mail server rejected ${email}.`;
+        this.emit(':tell', output);
+      });
     } else {
       this.emit(':ask', skillMessages.noResultsError, skillMessages.tryAgain);
     }

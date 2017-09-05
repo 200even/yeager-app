@@ -2,6 +2,7 @@ const helpers = require('./helpers');
 const assert = require('assert');
 const conversation = require('alexa-conversation');
 const app = require('./index.js');
+const emailExistence = require('email-existence');
 
 const opts = { // config will be used to generate the requests to skill 
   name: 'Test Conversation',
@@ -70,11 +71,29 @@ describe('Unit Tests', () => {
 });
 
 let email = 'elon.musk@spacex.com';
-conversation(opts)
-.userSays('LaunchRequest')
-  .ssmlResponse
-    .shouldEqual(`<speak> ${app.skillMessages.welcomeMessage} </speak>`, `<speak> ${app.skillMessages.welcomeReprompt} </speak>`)
-.userSays('getVerifyIntent', {email: email})
-  .ssmlResponse
-    .shouldEqual(`<speak> The mail server rejected ${email}. </speak>`)
-.end();
+
+describe('Email Existence Test', () => {
+  it('should return false', () => {
+    emailExistence.check(email, (res) => {
+      assert.equal(false, isValid);  
+    });
+  });
+  it('should return true', () => {
+    email = 'fergusonic85@gmail.com';
+    emailExistence.check(email, (res) => {
+      assert.equal(true, isValid);
+    });
+    
+  });
+});
+
+describe('Conversation Flow Tests', () => {
+  conversation(opts)
+  .userSays('LaunchRequest')
+    .ssmlResponse
+      .shouldEqual(`<speak> ${app.skillMessages.welcomeMessage} </speak>`, `<speak> ${app.skillMessages.welcomeReprompt} </speak>`)
+  .userSays('getVerifyIntent', {email: email})
+    .ssmlResponse
+      .shouldEqual(`<speak> The mail server rejected ${email}. </speak>`)
+  .end();
+});
