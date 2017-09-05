@@ -3,12 +3,13 @@ version: 0.1
 phases:
   install:
     commands:
-      - npm install --production
+      - npm install
       - aws cloudformation package --template-file samTemplate.yaml --s3-bucket yeager-skill 
                                    --output-template-file NewSamTemplate.yaml
   post_build:
     commands:
       - npm test
+      - npm prune --production
 artifacts:
   type: zip
   files:

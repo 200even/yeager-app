@@ -6,63 +6,63 @@ const emailExistence = require('email-existence');
 
 const opts = { // config will be used to generate the requests to skill 
   name: 'Test Conversation',
-  appId: process.env.YEAGER_APP_ID,
+  appId: process.env.YEAGER_APP_ID || 'amzn1.ask.skill.5375fd78-2b74-49b8-9675-0c700dca53eb',
   app: app,
 };
 
-describe('Unit Tests', () => {
+describe('Unit Tests', function () {
   let input = '';
-  describe('Extract Root Domain', () => {
+  describe('Extract Root Domain', function () {
     let domain = '';
-    it('should return google.com from www.google.com', () => {
+    it('should return google.com from www.google.com', function () {
       input = 'www.google.com';
       domain = helpers.extractRootDomain(input);
       assert.equal('google.com', domain);
     });
-    it('should return google.com from http://www.google.com', () => {
+    it('should return google.com from http://www.google.com', function () {
       input = 'http://www.google.com';
       domain = helpers.extractRootDomain(input);
       assert.equal('google.com', domain);
     });
-    it('should return google.com from http://www.google.com/foo', () => {
+    it('should return google.com from http://www.google.com/foo', function () {
       input = 'http://www.google.com/foo';
       domain = helpers.extractRootDomain(input);
       assert.equal('google.com', domain);
     });
-    it('should return google.com from \'www.google.com foo\'', () => {
+    it('should return google.com from \'www.google.com foo\'', function () {
       input = 'www.google.com foo';
       domain = helpers.extractRootDomain(input);
       assert.equal('google.com', domain);
     });
-    it('should return india-tourism.com from http://india-tourism.com', () => {
+    it('should return india-tourism.com from http://india-tourism.com', function () {
       input = 'http://india-tourism.com';
       domain = helpers.extractRootDomain(input);
       assert.equal('india-tourism.com', domain);
     });
-    it('should return india-tourism.com from \'foo http://india-tourism.com bar\'', () => {
+    it('should return india-tourism.com from \'foo http://india-tourism.com bar\'', function () {
       input = 'foo http://india-tourism.com bar';
       domain = helpers.extractRootDomain(input);
       assert.equal('india-tourism.com', domain);
     });
-    it('should return india-tourism.com from alliedenvelopes.co.uk', () => {
+    it('should return india-tourism.com from alliedenvelopes.co.uk', function () {
       input = 'alliedenvelopes.co.uk';
       domain = helpers.extractRootDomain(input);
       assert.equal('alliedenvelopes.co.uk', domain);
     });
   });
-  describe('Extract email', () => {
+  describe('Extract email', function () {
     let email = '';
-    it('should return elon.musk@spacex.com from elon.musk@spacex.com', () => {
+    it('should return elon.musk@spacex.com from elon.musk@spacex.com', function () {
       input = 'elon.musk@spacex.com';
       email = helpers.extractEmail(input);
       assert.equal('elon.musk@spacex.com', email);
     });
-    it('should return elon.musk@spacex.com from \'elon.musk@spacex.com foo\'', () => {
+    it('should return elon.musk@spacex.com from \'elon.musk@spacex.com foo\'', function () {
       input = 'elon.musk@spacex.com foo';
       email = helpers.extractEmail(input);
       assert.equal('elon.musk@spacex.com', email);
     });
-    it('should return elon.musk@spacex.co.uk from \'foo elon.musk@spacex.co.uk bar\'', () => {
+    it('should return elon.musk@spacex.co.uk from \'foo elon.musk@spacex.co.uk bar\'', function () {
       input = 'foo elon.musk@spacex.co.uk bar';
       email = helpers.extractEmail(input);
       assert.equal('elon.musk@spacex.co.uk', email);
@@ -70,30 +70,30 @@ describe('Unit Tests', () => {
   });
 });
 
-let email = 'elon.musk@spacex.com';
-
-describe('Email Existence Test', () => {
-  it('should return false', () => {
-    emailExistence.check(email, (res) => {
-      assert.equal(false, isValid);  
+describe('Email Existence Test', function () {
+  this.timeout(10000);
+  it('should return false', function (done) {
+    emailExistence.check('x@doesnotexist', function (err, valid) {
+      assert.equal(false, valid);
+      done();
     });
   });
-  it('should return true', () => {
-    email = 'fergusonic85@gmail.com';
-    emailExistence.check(email, (res) => {
-      assert.equal(true, isValid);
+  it('should return true', function (done) {
+    emailExistence.check('andreas.brekken+spam@gmail.com', function (err, valid) {
+      assert.strictEqual(true, valid);
+      done();                
     });
-    
   });
 });
 
-describe('Conversation Flow Tests', () => {
+describe('Conversation Flow Tests', function () {
+  let email = 'andreas.brekken+spam@gmail.com';
   conversation(opts)
   .userSays('LaunchRequest')
     .ssmlResponse
       .shouldEqual(`<speak> ${app.skillMessages.welcomeMessage} </speak>`, `<speak> ${app.skillMessages.welcomeReprompt} </speak>`)
   .userSays('getVerifyIntent', {email: email})
     .ssmlResponse
-      .shouldEqual(`<speak> The mail server rejected ${email}. </speak>`)
+      .shouldEqual(`<speak> ${email} seems to be valid. </speak>`)
   .end();
 });
